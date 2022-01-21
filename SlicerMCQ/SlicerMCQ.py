@@ -1,4 +1,5 @@
 import os
+import string
 import unittest
 import logging
 import vtk, qt, ctk, slicer
@@ -17,13 +18,14 @@ class SlicerMCQ(ScriptedLoadableModule):
   def __init__(self, parent):
     ScriptedLoadableModule.__init__(self, parent)
     self.parent.title = "SlicerMCQ"  # TODO: make this more human readable by adding spaces
-    self.parent.categories = ["Examples"]  # TODO: set categories (folders where the module shows up in the module selector)
+    self.parent.categories = ["Slicer Education"]  # TODO: set categories (folders where the module shows up in the module selector)
     self.parent.dependencies = []  # TODO: add here list of module names that this module requires
-    self.parent.contributors = ["John Doe (AnyWare Corp.)"]  # TODO: replace with "Firstname Lastname (Organization)"
+    self.parent.contributors = ["Rebecca Hisey (Perk Lab, Queen's University), "
+                                "David Garcia-Mato (Ebatinca),"
+                                "Csaba Pinter (Ebatinca)"]
     # TODO: update with short description of the module and a link to online module documentation
     self.parent.helpText = """
-This is an example of scripted loadable module bundled in an extension.
-See more information in <a href="https://github.com/organization/projectname#SlicerMCQ">module documentation</a>.
+This module allows for the creation of multiple choice question banks for use in educational systems
 """
     # TODO: replace with organization, grant and thanks
     self.parent.acknowledgementText = """
@@ -82,6 +84,85 @@ def registerSampleData():
     # This node name will be used when the data set is loaded
     nodeNames='SlicerMCQ2'
   )
+class mcQuestionWidget():
+  def __init__(self,questionNum,questionDataframe = None):
+    self.widget = qt.QWidget()
+    self.layout = qt.QVBoxLayout()
+    self.label = qt.QLabel("Question {}.".format(questionNum))
+    self.layout.addWidget(self.label)
+    self.questionLineEdit = qt.QLineEdit()
+    self.questionLineEdit.placeholderText = "Question Text"
+    self.layout.addWidget(self.questionLineEdit)
+    self.answerWidgets = []
+    self.numAnswers = 0
+    if questionDataframe != None:
+      self.questionLineEdit.text = questionDataframe["Question"]
+      for column in questionDataframe.columns:
+        [answerText,correctness] = column.split(";")
+        self.addAnswerOption(answerText,correctness)
+
+    self.addAnswerButton = qt.QPushButton("Add answer option")
+    self.layout.addWidget(self.addAnswerButton)
+    self.removeQuestionButton = qt.QPushButton("Remove Question")
+    self.layout.addWidget(self.removeQuestionButton)
+
+    self.addAnswerButton.connect("clicked(bool)",self.addAnswerOption)
+
+    self.widget.setLayout(self.layout)
+
+  def addAnswerOption(self,answerText=None,answerCorrectness=False):
+    answerOptions = list(string.ascii_lowercase)
+    labelText = answerOptions[self.numAnswers]
+    newAnswerOption = mcAnswerWidget(labelText=labelText)
+    self.numAnswers += 1
+    #newAnswerOption.SetName("answerWidget_{}".format(self.numAnswers))
+    if answerText!=None and answerText != False:
+      newAnswerOption.setText(answerText)
+      newAnswerOption.setCorrectness(answerCorrectness)
+
+    self.answerWidgets.append(newAnswerOption)
+    self.layout.removeWidget(self.addAnswerButton)
+    self.layout.removeWidget(self.removeQuestionButton)
+    self.layout.addWidget(newAnswerOption.widget)
+    self.layout.addWidget(self.addAnswerButton)
+    self.layout.addWidget(self.removeQuestionButton)
+
+
+class mcAnswerWidget():
+  def __init__(self,labelText = "a"):
+      self.widget = qt.QWidget()
+      self.layout = qt.QHBoxLayout()
+
+      self.answerOptionLabel = qt.QLabel("    {})".format(labelText))
+
+      self.answerLineEdit = qt.QLineEdit()
+      self.answerLineEdit.placeholderText = "Answer Text"
+      #self.answerLineEdit.enabled = True
+
+      self.removeButton = qt.QPushButton("Remove")
+      self.removeButton.setSizePolicy(qt.QSizePolicy())
+      self.removeButton.enabled = True
+
+      self.correctnessCheckBox = qt.QCheckBox("")
+
+      self.layout.addWidget(self.answerOptionLabel)
+      self.layout.addWidget(self.answerLineEdit)
+      self.layout.addWidget(self.removeButton)
+      self.layout.addWidget(self.correctnessCheckBox)
+
+      self.widget.setLayout(self.layout)
+
+  def setName(self,name):
+    self.widget.setName(name)
+
+  def setText(self,answerText):
+    self.answerLineEdit.text = answerText
+
+  def setCorrectness(self,correctness):
+    if correctness:
+      self.correctnessCheckBox.checked = True
+    else:
+      self.correctnessCheckBox.checked = False
 
 #
 # SlicerMCQWidget
@@ -122,26 +203,34 @@ class SlicerMCQWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # Create logic class. Logic implements all computations that should be possible to run
     # in batch mode, without a graphical user interface.
     self.logic = SlicerMCQLogic()
+    self.questionCollection = []
 
+    self.QuestionBankWidget = qt.QFrame()
+    self.questionBankLayout = qt.QVBoxLayout()
+    self.QuestionBankWidget.setLayout(self.questionBankLayout)
+
+
+    self.ui.questionScrollArea.setWidget(self.QuestionBankWidget)
     # Connections
 
     # These connections ensure that we update parameter node when scene is closed
     self.addObserver(slicer.mrmlScene, slicer.mrmlScene.StartCloseEvent, self.onSceneStartClose)
     self.addObserver(slicer.mrmlScene, slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose)
 
-    # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
-    # (in the selected parameter node).
-    #self.ui.inputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-    #self.ui.outputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-    #self.ui.imageThresholdSliderWidget.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
-    #self.ui.invertOutputCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
-    #self.ui.invertedOutputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-
-    # Buttons
-    #self.ui.applyButton.connect('clicked(bool)', self.onApplyButton)
-
+    #self.ui.questionScrollArea.SetWidget(self.ui.QuestionBank)
+    self.ui.addQuestionButton.connect("clicked(bool)",self.onAddQuestionClicked)
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
+
+  def onAddQuestionClicked(self):
+    numQuestions = len(self.questionCollection) + 1
+    newQuestionWidget = mcQuestionWidget(questionNum = numQuestions)
+    self.questionCollection.append(newQuestionWidget)
+    self.questionBankLayout.addWidget(newQuestionWidget.widget)
+    newQuestionWidget.removeQuestionButton.connect("clicked(bool)",self.onRemoveButtonClicked)
+
+  def onRemoveButtonClicked(self):
+    pass
 
   def cleanup(self):
     """
@@ -226,23 +315,6 @@ class SlicerMCQWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # Make sure GUI changes do not call updateParameterNodeFromGUI (it could cause infinite loop)
     self._updatingGUIFromParameterNode = True
 
-    # Update node selectors and sliders
-    #self.ui.inputSelector.setCurrentNode(self._parameterNode.GetNodeReference("InputVolume"))
-    #self.ui.outputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolume"))
-    #self.ui.invertedOutputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolumeInverse"))
-    #self.ui.imageThresholdSliderWidget.value = float(self._parameterNode.GetParameter("Threshold"))
-    #self.ui.invertOutputCheckBox.checked = (self._parameterNode.GetParameter("Invert") == "true")
-
-    # Update buttons states and tooltips
-    if self._parameterNode.GetNodeReference("InputVolume") and self._parameterNode.GetNodeReference("OutputVolume"):
-      #self.ui.applyButton.toolTip = "Compute output volume"
-      #self.ui.applyButton.enabled = True
-      pass
-    else:
-      #self.ui.applyButton.toolTip = "Select input and output volume nodes"
-      #self.ui.applyButton.enabled = False
-      pass
-
     # All the GUI updates are done
     self._updatingGUIFromParameterNode = False
 
@@ -257,16 +329,7 @@ class SlicerMCQWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
-    self._parameterNode.SetNodeReferenceID("InputVolume", self.ui.inputSelector.currentNodeID)
-    self._parameterNode.SetNodeReferenceID("OutputVolume", self.ui.outputSelector.currentNodeID)
-    self._parameterNode.SetParameter("Threshold", str(self.ui.imageThresholdSliderWidget.value))
-    self._parameterNode.SetParameter("Invert", "true" if self.ui.invertOutputCheckBox.checked else "false")
-    self._parameterNode.SetNodeReferenceID("OutputVolumeInverse", self.ui.invertedOutputSelector.currentNodeID)
-
     self._parameterNode.EndModify(wasModified)
-
-  def onApplyButton(self):
-    pass
 
 #
 # SlicerMCQLogic

@@ -28,7 +28,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QScrollArea" name="scrollArea">
+    <widget class="QScrollArea" name="questionScrollArea">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
        <horstretch>0</horstretch>
@@ -140,7 +140,7 @@
              <string>Remove</string>
             </property>
            </widget>
-           <widget class="QLabel" name="label">
+           <widget class="QLabel" name="correctnessLabel">
             <property name="geometry">
              <rect>
               <x>240</x>
@@ -165,7 +165,7 @@
              <string>Correct:</string>
             </property>
            </widget>
-           <widget class="QLabel" name="label_2">
+           <widget class="QLabel" name="answerOptionLabel_1">
             <property name="geometry">
              <rect>
               <x>20</x>
@@ -184,7 +184,7 @@
              <string>a)</string>
             </property>
            </widget>
-           <widget class="QLineEdit" name="lineEdit_2">
+           <widget class="QLineEdit" name="answerLineEdit_1">
             <property name="geometry">
              <rect>
               <x>40</x>
@@ -203,7 +203,7 @@
              <string>Answer text</string>
             </property>
            </widget>
-           <widget class="QPushButton" name="pushButton_6">
+           <widget class="QPushButton" name="removeAnswerButton_1">
             <property name="geometry">
              <rect>
               <x>180</x>
@@ -222,7 +222,7 @@
              <string>Remove</string>
             </property>
            </widget>
-           <widget class="QCheckBox" name="correctCheckBox">
+           <widget class="QCheckBox" name="correctCheckBox_1">
             <property name="geometry">
              <rect>
               <x>250</x>
@@ -244,7 +244,7 @@
              <string/>
             </property>
            </widget>
-           <widget class="QLabel" name="label_3">
+           <widget class="QLabel" name="answerOptionLabel_2">
             <property name="geometry">
              <rect>
               <x>20</x>
@@ -263,7 +263,7 @@
              <string>b)</string>
             </property>
            </widget>
-           <widget class="QLineEdit" name="lineEdit_4">
+           <widget class="QLineEdit" name="answerLineEdit_2">
             <property name="geometry">
              <rect>
               <x>40</x>
@@ -282,7 +282,7 @@
              <string>Answer text</string>
             </property>
            </widget>
-           <widget class="QPushButton" name="pushButton_7">
+           <widget class="QPushButton" name="removeAnswerButton_2">
             <property name="geometry">
              <rect>
               <x>180</x>
@@ -301,7 +301,7 @@
              <string>Remove</string>
             </property>
            </widget>
-           <widget class="QCheckBox" name="checkBox_3">
+           <widget class="QCheckBox" name="correctCheckBox_2">
             <property name="geometry">
              <rect>
               <x>250</x>
@@ -323,7 +323,7 @@
              <string/>
             </property>
            </widget>
-           <widget class="QPushButton" name="pushButton_5">
+           <widget class="QPushButton" name="addAnswerButton">
             <property name="geometry">
              <rect>
               <x>8</x>
@@ -351,7 +351,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="applyButton">
+    <widget class="QPushButton" name="addQuestionButton">
      <property name="enabled">
       <bool>true</bool>
      </property>
